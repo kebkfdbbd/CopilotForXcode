@@ -1,0 +1,5 @@
+{
+  "name": "GitHub Copilot for Xcode",
+  "user": "ubuntu",
+  "install": "cd Server && npm ci --force && npm run build"
+}
