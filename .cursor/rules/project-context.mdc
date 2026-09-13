@@ -1,0 +1,8 @@
+---
+description: Project layout, build commands and working agreements
+alwaysApply: true
+---
+
+See [AGENTS.md](mdc:AGENTS.md) for project layout, build and test commands, code
+style and working agreements. That file is the canonical context; this rule only
+points at it.
