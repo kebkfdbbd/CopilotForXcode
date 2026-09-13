@@ -1,0 +1,11 @@
+{
+  "name": "Copilot for Xcode",
+  "install": "cd Server && npm install --force && npm run build",
+  "terminals": [
+    {
+      "name": "Server preview",
+      "command": "cd Server/dist && python3 -m http.server 8099"
+    }
+  ],
+  "ports": [8099]
+}
