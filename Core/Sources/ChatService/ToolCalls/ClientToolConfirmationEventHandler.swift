@@ -58,6 +58,17 @@ extension ChatService {
             }
         }
 
+        if ToolAutoApprovalManager.isFetchWebPageOperation(name: params.name) {
+            let urls = ToolAutoApprovalManager.extractFetchWebPageURLs(from: params.input)
+            let allowed = await ToolAutoApprovalManager.shared.isFetchWebPageAllowed(
+                conversationId: params.conversationId,
+                urls: urls
+            )
+            if allowed {
+                return true
+            }
+        }
+
         if let mcpServerName {
             let allowed = await ToolAutoApprovalManager.shared.isMCPAllowed(
                 conversationId: params.conversationId,

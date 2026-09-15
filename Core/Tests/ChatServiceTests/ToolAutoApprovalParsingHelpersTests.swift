@@ -39,4 +39,71 @@ class ToolAutoApprovalParsingHelpersTests: XCTestCase {
          XCTAssertEqual(ToolAutoApprovalManager.extractTerminalCommandNames(from: "ls | grep match"), ["ls", "grep"])
         XCTAssertEqual(ToolAutoApprovalManager.extractTerminalCommandNames(from: "ls &> out.txt"), ["ls"])
     }
+
+    func testIsFetchWebPageOperation() {
+        XCTAssertTrue(ToolAutoApprovalManager.isFetchWebPageOperation(name: "fetch_webpage"))
+        XCTAssertFalse(ToolAutoApprovalManager.isFetchWebPageOperation(name: "run_in_terminal"))
+    }
+
+    func testNormalizeFetchWebPageURLs() {
+        XCTAssertEqual(
+            ToolAutoApprovalManager.normalizeFetchWebPageURLs(
+                [
+                    " https://example.com/one ",
+                    "",
+                    "https://example.com/two",
+                    "https://example.com/one",
+                ]
+            ),
+            ["https://example.com/one", "https://example.com/two"]
+        )
+    }
+
+    func testFetchWebPageApprovalIsScopedToConversationAndURL() async {
+        let manager = ToolAutoApprovalManager()
+        let firstURL = "https://example.com/one"
+        let secondURL = "https://example.com/two"
+
+        let initiallyAllowed = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-1",
+            urls: [firstURL]
+        )
+        XCTAssertFalse(initiallyAllowed)
+
+        await manager.approve(
+            .fetchWebPage(
+                conversationId: "conversation-1",
+                urls: [" \(firstURL) "]
+            )
+        )
+
+        let allowedInApprovedConversation = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-1",
+            urls: [firstURL]
+        )
+        let allowedInOtherConversation = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-2",
+            urls: [firstURL]
+        )
+        let allowedForOtherURL = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-1",
+            urls: [secondURL]
+        )
+        let allowedForMixedURLs = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-1",
+            urls: [firstURL, secondURL]
+        )
+        XCTAssertTrue(allowedInApprovedConversation)
+        XCTAssertFalse(allowedInOtherConversation)
+        XCTAssertFalse(allowedForOtherURL)
+        XCTAssertFalse(allowedForMixedURLs)
+
+        await manager.clearConversationData(conversationId: "conversation-1")
+
+        let allowedAfterClearing = await manager.isFetchWebPageAllowed(
+            conversationId: "conversation-1",
+            urls: [firstURL]
+        )
+        XCTAssertFalse(allowedAfterClearing)
+    }
 }

@@ -57,6 +57,26 @@ extension ToolAutoApprovalManager {
         name == ToolName.runInTerminal.rawValue
     }
 
+    public nonisolated static func isFetchWebPageOperation(name: String) -> Bool {
+        name == ToolName.fetchWebPage.rawValue
+    }
+
+    public nonisolated static func extractFetchWebPageURLs(
+        from input: [String: AnyCodable]?
+    ) -> [String] {
+        guard let urls = input?["urls"]?.value as? [String] else { return [] }
+        return normalizeFetchWebPageURLs(urls)
+    }
+
+    public nonisolated static func normalizeFetchWebPageURLs(_ urls: [String]) -> [String] {
+        var seen = Set<String>()
+        return urls.compactMap { url in
+            let normalizedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalizedURL.isEmpty, seen.insert(normalizedURL).inserted else { return nil }
+            return normalizedURL
+        }
+    }
+
     public nonisolated static func extractSensitiveFileConfirmationInfo(from message: String) -> SensitiveFileConfirmationInfo {
         let fullRange = NSRange(message.startIndex ..< message.endIndex, in: message)
 

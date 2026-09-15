@@ -6,6 +6,7 @@ public actor ToolAutoApprovalManager {
     public enum AutoApproval: Equatable, Sendable {
         case mcpTool(scope: AutoApprovalScope, serverName: String, toolName: String)
         case mcpServer(scope: AutoApprovalScope, serverName: String)
+        case fetchWebPage(conversationId: ConversationID, urls: [String])
         case sensitiveFile(
             scope: AutoApprovalScope,
             toolName: String,
@@ -18,6 +19,7 @@ public actor ToolAutoApprovalManager {
     private var mcpStorage = MCPApprovalStorage()
     private var sensitiveFileStorage = SensitiveFileApprovalStorage()
     private var terminalStorage = TerminalApprovalStorage()
+    private var fetchWebPageStorage = FetchWebPageApprovalStorage()
 
     public init() {}
 
@@ -38,6 +40,9 @@ public actor ToolAutoApprovalManager {
             case .global:
                 allowMCPServerGlobally(serverName: serverName)
             }
+
+        case let .fetchWebPage(conversationId, urls):
+            allowFetchWebPage(conversationId: conversationId, urls: urls)
 
         case let .sensitiveFile(scope, toolName, description, pattern):
             switch scope {
@@ -64,6 +69,16 @@ public actor ToolAutoApprovalManager {
                 }
             }
         }
+    }
+
+    // MARK: - Fetch webpage approvals
+
+    public func allowFetchWebPage(conversationId: ConversationID, urls: [String]) {
+        fetchWebPageStorage.allowURLs(conversationId: conversationId, urls: urls)
+    }
+
+    public func isFetchWebPageAllowed(conversationId: ConversationID, urls: [String]) -> Bool {
+        fetchWebPageStorage.areAllowed(conversationId: conversationId, urls: urls)
     }
 
     // MARK: - MCP approvals
@@ -168,6 +183,7 @@ public actor ToolAutoApprovalManager {
         mcpStorage.clear(scope: .session(conversationId))
         sensitiveFileStorage.clear(scope: .session(conversationId))
         terminalStorage.clear(scope: .session(conversationId))
+        fetchWebPageStorage.clear(conversationId: conversationId)
     }
 
     public func clearGlobalData() {
@@ -176,4 +192,3 @@ public actor ToolAutoApprovalManager {
         terminalStorage.clear(scope: .global)
     }
 }
-

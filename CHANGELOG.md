@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.51.0 - August 12, 2026
+### Added
+- Support for Kimi K3 through the updated Copilot language server.
+- Agent Client Protocol (ACP) plugin metadata for GitHub Copilot.
+
+### Changed
+- Updated the Copilot language server from 1.488.0 to 1.523.3.
+- Updated the ACP plugin to use Copilot CLI 1.0.78.
+
+### Fixed
+- Fixed model pricing tooltips for the latest token pricing metadata.
+
 ## 0.50.0 - May 20, 2026
 ### Added
 - Reasoning effort control for supported models: Low, Medium, or High from the model picker to balance response speed and quality.

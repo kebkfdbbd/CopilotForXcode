@@ -108,6 +108,9 @@ struct ToolConfirmationView: View {
     private var mcpServerName: String? { ToolAutoApprovalManager.extractMCPServerName(from: titleText) }
     private var conversationId: String { tool.invokeParams?.conversationId ?? "" }
     private var invokeMessage: String { tool.invokeParams?.message ?? "" }
+    private var fetchWebPageURLs: [String] {
+        ToolAutoApprovalManager.extractFetchWebPageURLs(from: tool.invokeParams?.input)
+    }
     private var isSensitiveFileOperation: Bool { ToolAutoApprovalManager.isSensitiveFileOperation(message: invokeMessage) }
     private var sensitiveFileInfo: ToolAutoApprovalManager.SensitiveFileConfirmationInfo {
         ToolAutoApprovalManager.extractSensitiveFileConfirmationInfo(from: invokeMessage)
@@ -117,6 +120,11 @@ struct ToolConfirmationView: View {
     private var shouldShowSensitiveFileSplitButton: Bool {
         mcpServerName == nil && isSensitiveFileOperation && !conversationId.isEmpty
     }
+    private var shouldShowFetchWebPageSplitButton: Bool {
+        ToolAutoApprovalManager.isFetchWebPageOperation(name: toolName)
+            && !conversationId.isEmpty
+            && !fetchWebPageURLs.isEmpty
+    }
 
     @ViewBuilder
     private var confirmationActionView: some View {
@@ -124,6 +132,8 @@ struct ToolConfirmationView: View {
            CopilotPolicyNotifierImpl.shared.copilotPolicy.agentModeAutoApprovalEnabled {
             if tool.isToolcallingLoopContinueTool {
                 continueButton
+            } else if shouldShowFetchWebPageSplitButton {
+                fetchWebPageSplitButton
             } else if shouldShowSensitiveFileSplitButton {
                 sensitiveFileSplitButton
             } else if shouldShowMCPSplitButton, let serverName = mcpServerName {
@@ -164,6 +174,38 @@ struct ToolConfirmationView: View {
                 .scaledFont(.body)
         }
         .buttonStyle(.borderedProminent)
+    }
+
+    private var fetchWebPageMenuItems: [SplitButtonMenuItem] {
+        [
+            SplitButtonMenuItem(
+                title: fetchWebPageURLs.count == 1
+                    ? "Allow this URL in this Session"
+                    : "Allow these URLs in this Session"
+            ) {
+                chat.send(
+                    .toolCallAcceptedWithApproval(
+                        tool.id,
+                        .fetchWebPage(
+                            conversationId: conversationId,
+                            urls: fetchWebPageURLs
+                        )
+                    )
+                )
+            },
+        ]
+    }
+
+    private var fetchWebPageSplitButton: some View {
+        SplitButton(
+            title: "Allow Once",
+            isDisabled: false,
+            primaryAction: {
+                chat.send(.toolCallAccepted(tool.id))
+            },
+            menuItems: fetchWebPageMenuItems,
+            style: .prominent
+        )
     }
 
     private var sensitiveFileMenuItems: [SplitButtonMenuItem] {
@@ -324,6 +366,23 @@ struct ToolConfirmationView: View {
 
                 ThemedMarkdownText(text: tool.invokeParams?.message ?? "", chat: chat)
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                if ToolAutoApprovalManager.isFetchWebPageOperation(name: toolName),
+                   !fetchWebPageURLs.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(fetchWebPageURLs.count == 1 ? "URL" : "URLs")
+                            .scaledFont(size: chatFontSize - 1, weight: .semibold)
+                            .foregroundStyle(.primary)
+
+                        ForEach(fetchWebPageURLs, id: \.self) { url in
+                            Text(url)
+                                .textSelection(.enabled)
+                                .scaledFont(size: chatFontSize - 1)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 HStack {
                     Button(action: {
